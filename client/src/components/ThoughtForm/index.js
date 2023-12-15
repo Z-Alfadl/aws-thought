@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 const ThoughtForm = () => {
   const [formState, setFormState] = useState({
@@ -6,6 +6,7 @@ const ThoughtForm = () => {
     thought: "",
   });
   const [characterCount, setCharacterCount] = useState(0);
+  const fileInput = useRef(null);
 
   // update state based on form input changes
   const handleChange = (event) => {
@@ -15,22 +16,48 @@ const ThoughtForm = () => {
     }
   };
 
+  const handleImageUpload = (event) => {
+    event.preventDefault();
+
+    const data = new FormData();
+    data.append('image', fileInput.current.files[0])
+
+    const postImage = async () => {
+      try {
+        const res = await fetch('/api/image-upload', {
+          mode: 'cors',
+          method: 'POST',
+          body: data
+        }); 
+          if (!res.ok) throw new Error(res.statusText);
+          const postResponse = await res.json();
+          console.log(postResponse)
+          setFormState({ ...formState, image: postResponse.Location})
+        return postResponse.Location
+        }
+       catch (error) {
+        console.log(error)
+      }
+    };
+    postImage()
+  }
+
   // submit form
   const handleFormSubmit = (event) => {
     event.preventDefault();
     const postData = async () => {
-      const res = await fetch('/api/users', {
-        method: 'POST',
+      const res = await fetch("/api/users", {
+        method: "POST",
         headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(formState)
+        body: JSON.stringify(formState),
       });
       const data = await res.json();
-      console.log(data)
+      console.log(data);
     };
-    postData()
+    postData();
     // clear form value
     setFormState({ username: "", thought: "" });
     setCharacterCount(0);
@@ -59,6 +86,13 @@ const ThoughtForm = () => {
           className="form-input col-12 "
           onChange={handleChange}
         ></textarea>
+        <label className="form-input col-12  p-1">
+          Add an image to your thought:
+          <input type="file" ref={fileInput} className="form-input p-2" />
+          <button className="btn" onClick={handleImageUpload} type="submit">
+            Upload
+          </button>
+        </label>
         <button className="btn col-12 " type="submit">
           Submit
         </button>
